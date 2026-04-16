@@ -84,5 +84,5 @@ Content: {text}
 
 
 # Start the bot
-if __name__ == '__bot__':
+if __name__ == '__main__':
     bot.run(DISCORD_TOKEN)
