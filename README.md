@@ -1,14 +1,16 @@
 # Confessy Bot
 
-An anonymous confession Discord bot that allows users to submit confessions to a dedicated channel while maintaining anonymity. All submissions are logged to a moderation channel for oversight and security.
+An anonymous confession Discord bot that allows users to submit confessions to a dedicated channel while maintaining anonymity. Each server can configure its own confession and moderation channels. All submissions are logged for oversight and security.
 
 ## Features
 
-- 🔐 **Anonymous Submissions** - Users can confess without revealing their identity to other users
-- 📝 **Rich Formatting** - Confessions are displayed in beautiful embeds
-- 📊 **Logging & Moderation** - All submissions are logged with timestamps and user information to a dedicated moderation channel
-- ⚡ **Slash Commands** - Modern Discord slash command integration
-- 🎨 **Attractive UI** - Purple themed embeds for visual appeal
+- Anonymous Submissions - Users can confess without revealing their identity to other users
+- Multi-Server Support - Use the same bot on unlimited Discord servers with separate configurations
+- Per-Server Setup - Each server configures its own confession and logs channels
+- Rich Formatting - Confessions are displayed in beautiful embeds
+- Logging & Moderation - All submissions are logged with timestamps and user information
+- Slash Commands - Modern Discord slash command integration
+- Easy Configuration - Simple `/setup` command for administrators
 
 ## Requirements
 
@@ -21,7 +23,7 @@ An anonymous confession Discord bot that allows users to submit confessions to a
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/Confessy.git
+git clone https://github.com/Najdz3l/Confessy.git
 cd Confessy
 ```
 
@@ -49,7 +51,7 @@ pip install -r requirements.txt
 
 ### 4. Configure Environment Variables
 
-Copy `.env.example` to `.env` and fill in your configuration:
+Copy `.env.example` to `.env` and fill in your token:
 
 ```bash
 cp .env.example .env
@@ -59,14 +61,12 @@ Edit `.env` with your values:
 
 ```env
 DISCORD_TOKEN=your_bot_token_here
-CONFESSION_CHANNEL_ID=123456789
-LOGS_CHANNEL_ID=987654321
 ```
 
 ### 5. Run the Bot
 
 ```bash
-python bot.py
+python main.py
 ```
 
 You should see:
@@ -78,9 +78,22 @@ Application commands synchronized!
 
 ## Usage
 
+### Server Setup (Administrators Only)
+
+First, an administrator must configure the bot for their server:
+
+```
+/setup #confessions-channel #logs-channel
+```
+
+This tells the bot which channels to use for:
+
+- **confessions-channel**: Where anonymous confessions are posted
+- **logs-channel**: Where moderation logs are stored (private to moderators)
+
 ### Submitting a Confession
 
-In Discord, simply use the slash command:
+Users can then submit confessions using:
 
 ```
 /confession Your confession text here
@@ -88,19 +101,38 @@ In Discord, simply use the slash command:
 
 The bot will:
 
-1. Post your confession anonymously to the confession channel
-2. Log the submission details to the logs channel (for moderation)
+1. Post your confession anonymously to the configured confession channel
+2. Log the submission details (with your user info) to the logs channel (for moderation only)
 3. Send you a confirmation message (visible only to you)
 
 ## Configuration
 
 ### Environment Variables
 
-| Variable                | Description                                       | Example                              |
-| ----------------------- | ------------------------------------------------- | ------------------------------------ |
-| `DISCORD_TOKEN`         | Your Discord bot token                            | `MTk4NjIyNDgzMjM4MjQwOTI4.C5XeEQ...` |
-| `CONFESSION_CHANNEL_ID` | Channel ID where confessions are posted           | `1234567890`                         |
-| `LOGS_CHANNEL_ID`       | Channel ID where logs are stored (for moderation) | `0987654321`                         |
+| Variable        | Description            | Example                              |
+| --------------- | ---------------------- | ------------------------------------ |
+| `DISCORD_TOKEN` | Your Discord bot token | `MTk4NjIyNDgzMjM4MjQwOTI4.C5XeEQ...` |
+
+### Per-Server Configuration
+
+Server configurations are stored in `server_config.json`. This file is automatically created when an administrator runs `/setup` for the first time on a server.
+
+Example `server_config.json`:
+
+```json
+{
+  "123456789": {
+    "confession_channel_id": 987654321,
+    "logs_channel_id": 111222333
+  },
+  "444555666": {
+    "confession_channel_id": 777888999,
+    "logs_channel_id": 222333444
+  }
+}
+```
+
+Each guild (server) ID maps to its own confession and logs channels.
 
 ### Getting Your Bot Token
 
@@ -109,30 +141,62 @@ The bot will:
 3. Go to the "Bot" tab
 4. Click "Add Bot"
 5. Under "TOKEN", click "Copy"
-6. Paste it in your `.env` file
+6. Paste it in your `.env` file as `DISCORD_TOKEN=...`
 
-### Getting Channel IDs
+### Adding Bot to Your Server
 
-1. Enable Developer Mode in Discord (User Settings → Advanced → Developer Mode)
-2. Right-click on a channel
-3. Select "Copy Channel ID"
-4. Paste it in your `.env` file
+1. In [Discord Developer Portal](https://discord.com/developers/applications)
+2. Go to OAuth2 > URL Generator
+3. Select scopes: `bot`
+4. Select permissions: `Send Messages`, `Embed Links`, `Read Message History`
+5. Copy the generated URL and open it in your browser
+6. Select your server and authorize
 
 ## Project Structure
 
 ```
 Confessy/
-├── bot.py              # Main bot file
-├── requirements.txt    # Python dependencies
-├── .env.example        # Environment variables template
-├── .env               # Environment variables (git-ignored)
-├── .gitignore         # Git ignore rules
-└── README.md          # This file
+├── main.py              # Main bot file
+├── requirements.txt     # Python dependencies
+├── .env.example         # Environment variables template
+├── .env                 # Environment variables (git-ignored)
+├── .gitignore           # Git ignore rules
+├── server_config.json   # Per-server configurations (auto-created)
+├── LICENSE              # MIT License
+└── README.md            # This file
 ```
+
+## Hosting on Wispbyte
+
+### Pre-Startup Script
+
+Use this in Wispbyte's "Startup" (or "Pre-startup script") field:
+
+```bash
+if [ -d Confessy/.git ]; then (cd Confessy && git pull); else git clone --depth 1 https://github.com/Najdz3l/Confessy.git; fi && cp -r Confessy/* . 2>/dev/null; rm -rf Confessy 2>/dev/null; if [[ ! -f .env ]]; then echo "DISCORD_TOKEN=" > .env; fi; if [[ -f requirements.txt ]]; then pip install -U --prefix .local -r requirements.txt; fi && python main.py
+```
+
+### Configuration on Wispbyte
+
+1. **Project URL**: `https://github.com/Najdz3l/Confessy.git`
+2. **Auto Update**: Set `AUTO_UPDATE` to `1` to automatically pull changes
+3. **Main File**: `main.py`
+4. **Additional Packages**: Leave empty (installer from requirements.txt)
+5. **Environment Variables**:
+   - `DISCORD_TOKEN`: Your Discord bot token
+
+### After First Startup
+
+Once the bot starts on Wispbyte:
+
+1. Go to **Files** section
+2. Edit `.env` file
+3. Add your `DISCORD_TOKEN`
+4. Restart the server
 
 ## Logging
 
-All confessions are logged to the logs channel with:
+All confessions are logged to the configured logs channel with:
 
 - Timestamp
 - Username who submitted it
@@ -143,55 +207,67 @@ This allows server moderators to identify and act on inappropriate content if ne
 
 ## Security & Privacy
 
-- ✅ Confessions are posted anonymously to regular users
-- ✅ `.env` file is git-ignored to prevent token exposure
-- ✅ Logs are stored in a private channel for moderation only
-- ⚠️ **Never commit `.env` file to version control**
+- Confessions are posted anonymously to regular users
+- `.env` file is git-ignored to prevent token exposure
+- `server_config.json` is git-ignored to protect channel configurations
+- Logs are stored in a private channel for moderation only
+- Never commit `.env` file to version control
 
 ## Troubleshooting
 
-### "This environment is externally managed" (Arch Linux / CachyOS)
+### Bot not responding to /setup or /confession
 
-On Arch-based distributions, you must use a virtual environment:
+The server hasn't been configured yet. Make sure:
 
-```bash
-# Make sure you created and activated venv first
-python -m venv venv
-source venv/bin/activate.fish  # For Fish shell
-# or
-source venv/bin/activate       # For Bash/Zsh
+1. An administrator ran `/setup #confessions-channel #logs-channel`
+2. Both channels exist and the bot has permission to access them
+3. Restart the bot
 
-# Then install dependencies
-pip install -r requirements.txt
+### "I don't have permission to send messages in [channel]"
+
+The bot role doesn't have the required permissions. Fix:
+
+1. Go to Server Settings > Roles
+2. Find the bot role
+3. Give it: "Send Messages", "Embed Links", "Read Message History"
+4. Try `/setup` again
+
+### "Only administrators can use this command!"
+
+Only Discord server administrators can run `/setup`. Regular users can only use `/confession`.
+
+### Bot showing "This server hasn't been configured yet!"
+
+The `/setup` command hasn't been run on this server. Ask an administrator to run:
+
+```
+/setup #confessions-channel #logs-channel
 ```
 
 ### "This command is outdated, please try again in a few minutes"
 
 The bot's command cache is outdated. Solution:
 
-- Restart the bot (Ctrl+C, then run `python bot.py` again)
+- Restart the bot (Ctrl+C, then run `python main.py` again)
 - Wait a minute and try the command again
 
 ### "Improper token has been passed"
 
 - Check your `.env` file has the correct `DISCORD_TOKEN`
 - Make sure you're using the bot token, not the client ID
+- The token should start with your bot's ID
 
-### Bot doesn't respond
+### Bot doesn't show logs in the logs channel
 
-1. Make sure the bot has permissions to:
-   - View the confession channel
-   - Send messages in the confession channel
-   - View and send messages in the logs channel
+Make sure the bot has permission to send messages in the logs channel. Check:
 
-2. Check if the bot is running (`✅ Logged in as...` message shown)
+1. Channel permissions for the bot role
+2. The channel exists and bot can access it
+3. Run `/setup` again to reconfigure if needed
 
-### "No module named 'discord'" when running bot
+### No module named 'discord' on Wispbyte
 
-The dependencies are not installed. Make sure:
-1. Virtual environment is activated
-2. Run: `pip install -r requirements.txt`
-3. Then: `python bot.py`
+The dependencies are not installed. The pre-startup script should handle it, but manually restart the server if needed. Check logs for installation errors.
 
 ## Contributing
 

@@ -1,5 +1,7 @@
 venv/
 .env
+.env.example
 __pycache_/
 *.pyc
 .DS_Store
+server_config.json
